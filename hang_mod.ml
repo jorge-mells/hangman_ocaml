@@ -2,6 +2,19 @@ let random n =
   Random.self_init ();
   Random.int n
 
+let load_words file =
+  let ic = open_in file in
+  let rec loop acc =
+    try
+      let line = input_line ic in
+      loop (line :: acc)
+    with End_of_file -> acc
+  in
+  let words = loop [] in
+  close_in ic;
+  Printf.printf "Loaded %d words from %s\n" (List.length words) file;
+  words
+
 let get_word list =
   let len = List.length list in
   let index = random len in
@@ -71,7 +84,7 @@ let rec hang life blanks used_letters word =
       word)
 
 let hangman () =
-  let word = get_word Dictionary.words in
+  let word = get_word (load_words "dictionary.txt") in
   print_string
     (Printf.sprintf "Welcome to hangman.\nOnly lower case letters allowed\n");
   hang (total_lives word) (initial_blanks word) [] word
