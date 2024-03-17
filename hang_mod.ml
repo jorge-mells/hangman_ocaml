@@ -12,7 +12,6 @@ let load_words file =
   in
   let words = loop [] in
   close_in ic;
-  Printf.printf "Loaded %d words from %s\n" (List.length words) file;
   words
 
 let get_word list =
@@ -35,46 +34,50 @@ let rec guess () =
     print_string "\nGuess: ";
     read_line ()
   in
-  if Str.string_match (Str.regexp "^[a-z]$") line 0 then line else guess ()
+  if String.length line > 1 then guess () else
+  let line = String.lowercase_ascii line in
+  line.[0]
 
 let letters_used guess list =
   if List.mem guess list then list else guess :: list
 
 let lives_remaining previous_lives guess word =
-  if String.contains word (String.get guess 0) then previous_lives
+  if String.contains word guess then previous_lives
   else previous_lives - 1
 
+let explode s = List.of_seq (String.to_seq s)
+
+let rec implode l = String.of_seq (List.to_seq l)
+
 let blank_spaces_filled previous_blank guess word =
-  let word_list = Str.split (Str.regexp "") word in
-  let previous_b_list = Str.split (Str.regexp "") previous_blank in
+  let word_list = explode word in
+  let previous_b_list = explode previous_blank in
   let rec loop w_list p_list =
     match (w_list, p_list) with
     | [], [] -> []
     | x :: l1, y :: l2 -> if x = guess then x :: loop l1 l2 else y :: loop l1 l2
     | _, _ -> failwith "unreachable"
   in
-  String.concat "" (loop word_list previous_b_list)
+  implode (loop word_list previous_b_list)
 
 let rec hang life blanks used_letters word =
+  let used_letter_str = List.sort_uniq compare used_letters |> List.map (String.make 1) |> String.concat " " in
   if blanks = word then (
     print_endline
       (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life
-         (String.concat " " used_letters));
+         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
     print_endline (Printf.sprintf "Current word: %s" blanks);
     true)
   else if life = 0 then (
     print_endline
       (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life
-         (String.concat " " used_letters));
+         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
     print_endline (Printf.sprintf "The word is : %s" word);
     false)
   else (
     print_endline
       (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life
-         (String.concat " " used_letters));
+         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
     print_endline (Printf.sprintf "Current word: %s" blanks);
     let guess1 = guess () in
     hang
@@ -86,5 +89,5 @@ let rec hang life blanks used_letters word =
 let hangman () =
   let word = get_word (load_words "dictionary.txt") in
   print_string
-    (Printf.sprintf "Welcome to hangman.\nOnly lower case letters allowed\n");
+    (Printf.sprintf "Welcome to hangman.\n");
   hang (total_lives word) (initial_blanks word) [] word
