@@ -1,6 +1,5 @@
 let explode s = List.of_seq (String.to_seq s)
 let rec implode l = String.of_seq (List.to_seq l)
-let random n = Random.int n
 
 let load_words file =
   let ic = open_in file in
@@ -14,21 +13,21 @@ let load_words file =
   close_in ic;
   words
 
+(** Selects a random word *)
 let get_word list =
   let len = List.length list in
-  let index = random len in
+  let index = Random.int len in
   List.nth list index
 
-let total_lives word =
-  String.length
-    (String.fold_left
-       (fun b a -> if String.contains b a then b else b ^ String.make 1 a)
-       "" word)
+(** Returns the number of unique letters in a word *)
+let total_lives word = explode word |> List.sort_uniq compare |> List.length
 
+(** Creates a string of dashes the same length as the given word *)
 let initial_blanks word =
   let rec loop n s = if n < 1 then s else loop (n - 1) (s ^ "-") in
   loop (String.length word) ""
 
+(** asks the user for a single letter guess *)
 let rec guess () =
   let line =
     print_string "\nGuess: ";
@@ -37,7 +36,9 @@ let rec guess () =
   if String.length line > 1 then guess ()
   else
     let line = String.lowercase_ascii line in
-    line.[0]
+    let char = line.[0] in
+    if char < 'a' || char > 'z' then guess () else
+    char
 
 let letters_used guess list =
   if List.mem guess list then list else guess :: list
