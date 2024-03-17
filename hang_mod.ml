@@ -1,6 +1,6 @@
-let random n =
-  Random.self_init ();
-  Random.int n
+let explode s = List.of_seq (String.to_seq s)
+let rec implode l = String.of_seq (List.to_seq l)
+let random n = Random.int n
 
 let load_words file =
   let ic = open_in file in
@@ -34,20 +34,16 @@ let rec guess () =
     print_string "\nGuess: ";
     read_line ()
   in
-  if String.length line > 1 then guess () else
-  let line = String.lowercase_ascii line in
-  line.[0]
+  if String.length line > 1 then guess ()
+  else
+    let line = String.lowercase_ascii line in
+    line.[0]
 
 let letters_used guess list =
   if List.mem guess list then list else guess :: list
 
 let lives_remaining previous_lives guess word =
-  if String.contains word guess then previous_lives
-  else previous_lives - 1
-
-let explode s = List.of_seq (String.to_seq s)
-
-let rec implode l = String.of_seq (List.to_seq l)
+  if String.contains word guess then previous_lives else previous_lives - 1
 
 let blank_spaces_filled previous_blank guess word =
   let word_list = explode word in
@@ -61,33 +57,31 @@ let blank_spaces_filled previous_blank guess word =
   implode (loop word_list previous_b_list)
 
 let rec hang life blanks used_letters word =
-  let used_letter_str = List.sort_uniq compare used_letters |> List.map (String.make 1) |> String.concat " " in
-  if blanks = word then (
-    print_endline
-      (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
-    print_endline (Printf.sprintf "Current word: %s" blanks);
-    true)
-  else if life = 0 then (
-    print_endline
-      (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
-    print_endline (Printf.sprintf "The word is : %s" word);
+  let used_letter_str =
+    List.sort_uniq compare used_letters
+    |> List.map (String.make 1)
+    |> String.concat " "
+  in
+  Printf.printf
+    "You have %d lives left and have used the following letters: %s\n" life
+    used_letter_str;
+  if life = 0 then (
+    Printf.printf "The word was: %s\n" word;
     false)
   else (
-    print_endline
-      (Printf.sprintf
-         "\nYou have %d lives left and have used the following letters: %s" life used_letter_str);
-    print_endline (Printf.sprintf "Current word: %s" blanks);
-    let guess1 = guess () in
-    hang
-      (lives_remaining life guess1 word)
-      (blank_spaces_filled blanks guess1 word)
-      (letters_used guess1 used_letters)
-      word)
+    Printf.printf "Current word: %s\n" blanks;
+    if blanks = word then true
+    else
+      let guess1 = guess () in
+      hang
+        (lives_remaining life guess1 word)
+        (blank_spaces_filled blanks guess1 word)
+        (letters_used guess1 used_letters)
+        word)
 
 let hangman () =
+  (* init once at the start *)
+  Random.self_init ();
+  Printf.printf "Welcome to hangman.\n";
   let word = get_word (load_words "dictionary.txt") in
-  print_string
-    (Printf.sprintf "Welcome to hangman.\n");
   hang (total_lives word) (initial_blanks word) [] word
