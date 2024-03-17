@@ -1,0 +1,1 @@
+ocamlc -I +str str.cma dictionary.ml hang_mod.ml hangman.ml -o hangman.out
